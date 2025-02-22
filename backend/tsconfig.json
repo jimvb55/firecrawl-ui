@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "commonjs",
+    "module": "ESNext",
+    "moduleResolution": "node",
     "lib": ["es2020"],
     "outDir": "./dist",
     "rootDir": "./src",
@@ -9,8 +10,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
     "resolveJsonModule": true,
+    "allowJs": true,
     "baseUrl": ".",
     "paths": {
       "*": ["node_modules/*"]
