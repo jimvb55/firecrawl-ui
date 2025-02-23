@@ -45,16 +45,13 @@ A powerful web interface for FireCrawl web scraping capabilities with integrated
 ### Installation
 
 1. Clone the repository:
-\`\`\`bash
+```bash
 git clone https://github.com/your-username/firecrawl-ui.git
 cd firecrawl-ui
-\`\`\`
+```
 
 2. Install dependencies:
-\`\`\`bash
-# Install root dependencies
-npm install
-
+```bash
 # Install frontend dependencies
 cd frontend
 npm install
@@ -62,12 +59,12 @@ npm install
 # Install backend dependencies
 cd ../backend
 npm install
-\`\`\`
+```
 
 3. Configure environment variables:
 
-Create a \`.env\` file in the backend directory:
-\`\`\`env
+Create a `.env` file in the backend directory:
+```env
 # Server Configuration
 PORT=3000
 NODE_ENV=development
@@ -83,7 +80,7 @@ RATE_LIMIT_MAX_REQUESTS=100
 # Cache Configuration (optional)
 CACHE_TTL=3600
 CACHE_MAX_SIZE=100
-\`\`\`
+```
 
 ### API Key Setup
 
@@ -92,32 +89,37 @@ CACHE_MAX_SIZE=100
 2. Create or log into your account
 3. Navigate to API Keys section
 4. Generate a new API key
-5. Copy the key to your \`.env\` file
+5. Copy the key to your `.env` file
 
 #### OpenAI API Key
 1. Visit [OpenAI's Platform](https://platform.openai.com)
 2. Sign up or log in to your account
 3. Go to API Keys section
 4. Create a new secret key
-5. Copy the key to your \`.env\` file
+5. Copy the key to your `.env` file
 
 ### Starting the Application
 
-1. Start the development server:
-\`\`\`bash
-# In the root directory
+1. Start the backend server:
+```bash
+# In the backend directory
 npm run dev
-\`\`\`
+```
 
-This will concurrently start:
-- Frontend at http://localhost:5173
-- Backend at http://localhost:3000
-- Integrated FireCrawl MCP server
+2. In a new terminal, start the frontend:
+```bash
+# In the frontend directory
+npm run dev
+```
+
+The application will be available at:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3000
 
 ## 📖 Documentation
 
 ### Project Structure
-\`\`\`
+```
 firecrawl-ui/
 ├── frontend/                   # React frontend application
 │   ├── src/
@@ -135,7 +137,7 @@ firecrawl-ui/
 │   │   └── types/         # TypeScript types
 │   └── tests/             # Backend tests
 └── docker/                # Docker configuration
-\`\`\`
+```
 
 ### Key Components
 
@@ -168,29 +170,29 @@ We welcome contributions! Please follow these steps:
 
 1. Fork the repository
 2. Create your feature branch:
-   \`\`\`bash
+   ```bash
    git checkout -b feature/amazing-feature
-   \`\`\`
+   ```
 3. Commit your changes:
-   \`\`\`bash
+   ```bash
    git commit -m 'feat: add amazing feature'
-   \`\`\`
+   ```
 4. Push to the branch:
-   \`\`\`bash
+   ```bash
    git push origin feature/amazing-feature
-   \`\`\`
+   ```
 5. Open a Pull Request
 
 ### Commit Convention
 
 We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
-- \`feat:\` New features
-- \`fix:\` Bug fixes
-- \`docs:\` Documentation changes
-- \`style:\` Code style changes
-- \`refactor:\` Code refactoring
-- \`test:\` Adding or modifying tests
-- \`chore:\` Maintenance tasks
+- `feat:` New features
+- `fix:` Bug fixes
+- `docs:` Documentation changes
+- `style:` Code style changes
+- `refactor:` Code refactoring
+- `test:` Adding or modifying tests
+- `chore:` Maintenance tasks
 
 ## 📄 License
 
