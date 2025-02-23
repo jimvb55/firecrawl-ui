@@ -10,11 +10,12 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "axios": "^1.6.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "express": "^4.18.0",
-    "openai": "^4.0.0",
-    "axios": "^1.6.0"
+    "firecrawl-ui-backend": "file:",
+    "openai": "^4.0.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.0",

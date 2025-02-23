@@ -9,9 +9,31 @@ interface ChatMessage {
   content: string;
 }
 
+interface BusinessInfo {
+  name: string;
+  address: string;
+  phone: string;
+  website: string;
+  hours: string;
+}
+
 interface DisplayContent {
   type: string;
-  data: string | Record<string, unknown>;
+  data: string | BusinessInfo | Record<string, unknown>;
+  images?: { src: string; alt: string }[];
+  alternativeResults?: Array<{
+    url: string;
+    title: string;
+    description: string;
+  }>;
+  sections?: {
+    targetAudience: string;
+    competitiveAdvantage: string;
+    offers: string;
+    design: string;
+    timing: string;
+  };
+  content?: string;
 }
 
 const queryClient = new QueryClient({
@@ -20,24 +42,33 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       retry: 1,
     },
+    mutations: {
+      retry: 1,
+    },
   },
 });
 
 function App() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [displayContent, setDisplayContent] = useState<DisplayContent | undefined>();
+  const [lastUserMessage, setLastUserMessage] = useState<string>('');
 
   const handleNewMessage = (message: ChatMessage) => {
     setChatHistory(prev => [...prev, message]);
     
-    // Update display content based on message type
-    if (message.role === 'assistant') {
+    if (message.role === 'user') {
+      setLastUserMessage(message.content);
+    } else {
       try {
-        // Try to parse as JSON first
-        const jsonData = JSON.parse(message.content);
+        // Try to parse response data
+        const response = JSON.parse(message.content);
         setDisplayContent({
-          type: 'json',
-          data: jsonData,
+          type: response.type || 'text',
+          data: response.data || response,
+          images: response.images,
+          alternativeResults: response.alternativeResults,
+          sections: response.sections,
+          content: response.content
         });
       } catch {
         // If not JSON, treat as text/markdown
@@ -49,6 +80,27 @@ function App() {
     }
   };
 
+  const handleBusinessData = (data: BusinessInfo, images: { src: string; alt: string }[], analysis?: any) => {
+    setDisplayContent(prev => ({
+      ...prev,
+      type: 'business_info',
+      data,
+      images,
+      sections: analysis?.sections,
+      content: analysis?.content
+    }));
+  };
+
+  const handleAlternativeSelect = (url: string) => {
+    // Re-run the last user query with the selected alternative URL
+    const message: ChatMessage = {
+      role: 'user',
+      content: `Analyze this business instead: ${url}\n\nOriginal query: ${lastUserMessage}`,
+    };
+    setChatHistory(prev => [...prev, message]);
+    handleNewMessage(message);
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen bg-gray-100">
@@ -57,6 +109,9 @@ function App() {
             <h1 className="text-3xl font-bold text-gray-900">
               FireCrawl Chat Interface
             </h1>
+            <p className="mt-2 text-gray-600">
+              Research businesses and gather design assets for direct mail campaigns
+            </p>
           </div>
         </header>
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -64,16 +119,22 @@ function App() {
             {/* Chat Section */}
             <div className="lg:w-1/2">
               <div className="bg-white shadow rounded-lg p-6">
-                <Chat onNewMessage={handleNewMessage} />
+                <Chat 
+                  onNewMessage={handleNewMessage}
+                  onBusinessData={handleBusinessData}
+                />
               </div>
             </div>
             
             {/* Display Section */}
-            <div className="lg:w-1/2">
+            <div className="lg:w-1/2 space-y-6">
               <div className="bg-white shadow rounded-lg p-6">
-                <Display content={displayContent} />
+                <Display 
+                  content={displayContent}
+                  onSelectAlternative={handleAlternativeSelect}
+                />
               </div>
-              <div className="mt-6 bg-white shadow rounded-lg p-6">
+              <div className="bg-white shadow rounded-lg p-6">
                 <Export history={chatHistory} />
               </div>
             </div>

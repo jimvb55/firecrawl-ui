@@ -1,54 +1,101 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
+import { ChevronDownIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
+interface BusinessInfo {
+  name: string;
+  address: string;
+  phone: string;
+  website: string;
+  hours: string;
+}
+
+interface SearchResult {
+  url: string;
+  title: string;
+  description: string;
+}
+
 interface ChatResponse {
-  response: string;
   type: string;
-  timestamp: string;
+  response: string;
+  data?: BusinessInfo;
+  images?: { src: string; alt: string }[];
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    hasMore: boolean;
+  };
+  alternativeResults?: SearchResult[];
+  timestamp?: string;
+  error?: {
+    type: string;
+    message: string;
+    details?: any;
+  };
 }
 
 interface ChatMutationVariables {
   message: string;
   history: ChatMessage[];
+  page?: number;
 }
 
 interface ChatProps {
   onNewMessage: (message: ChatMessage) => void;
+  onBusinessData?: (data: BusinessInfo, images: { src: string; alt: string }[]) => void;
 }
 
-export function Chat({ onNewMessage }: ChatProps) {
+export function Chat({ onNewMessage, onBusinessData }: ChatProps) {
   const [message, setMessage] = useState('');
   const [history, setHistory] = useState<ChatMessage[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [error, setError] = useState<string | null>(null);
 
   const chatMutation = useMutation<ChatResponse, Error, ChatMutationVariables>({
-    mutationFn: async (variables) => {
-      const response = await fetch('/api/firecrawl/chat', {
+    mutationFn: async ({ message, history, page = 1 }) => {
+      const response = await fetch(`/api/firecrawl/chat?page=${page}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(variables),
+        body: JSON.stringify({ message, history }),
       });
       
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(data.error?.message || 'Failed to send message');
       }
       
-      return response.json();
+      return data;
     },
     onSuccess: (data) => {
+      // Clear any previous errors
+      setError(null);
+
       const assistantMessage: ChatMessage = {
         role: 'assistant',
         content: data.response
       };
       setHistory(prev => [...prev, assistantMessage]);
       onNewMessage(assistantMessage);
+
+      // Handle business data if available
+      if (data.type === 'business_info' && data.data && onBusinessData) {
+        onBusinessData(data.data, data.images || []);
+      }
+    },
+    onError: (error) => {
+      setError(error.message);
+      console.error('Chat error:', error);
     },
   });
 
@@ -60,20 +107,44 @@ export function Chat({ onNewMessage }: ChatProps) {
     setHistory(prev => [...prev, newMessage]);
     onNewMessage(newMessage);
     setMessage('');
+    setCurrentPage(1); // Reset pagination on new message
 
     chatMutation.mutate({
       message: message.trim(),
       history: [...history, newMessage],
+      page: 1,
+    });
+  };
+
+  const handleLoadMore = () => {
+    if (!chatMutation.data?.pagination?.hasMore) return;
+    
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    
+    chatMutation.mutate({
+      message: history[history.length - 2].content, // Get last user message
+      history: history.slice(0, -1), // Remove last assistant message
+      page: nextPage,
     });
   };
 
   return (
     <div className="flex flex-col h-[600px]">
       <div 
-        className="flex-1 overflow-y-auto mb-4"
+        className="flex-1 overflow-y-auto mb-4 space-y-4"
         aria-live="polite"
         aria-label="Chat history"
       >
+        {/* Error message */}
+        {error && (
+          <div className="flex items-center gap-2 text-red-500 p-4 bg-red-50 rounded-lg" role="alert">
+            <ExclamationCircleIcon className="h-5 w-5" />
+            <p>{error}</p>
+          </div>
+        )}
+
+        {/* Chat messages */}
         <ul className="space-y-4" role="list">
           {history.map((msg, index) => (
             <li
@@ -97,7 +168,7 @@ export function Chat({ onNewMessage }: ChatProps) {
           {chatMutation.isPending && (
             <li className="flex justify-start">
               <div 
-                className="bg-gray-100 text-gray-900 rounded-lg px-4 py-2" 
+                className="bg-gray-100 text-gray-900 rounded-lg px-4 py-2 animate-pulse" 
                 role="status"
                 aria-label="Assistant is typing"
               >
@@ -106,8 +177,23 @@ export function Chat({ onNewMessage }: ChatProps) {
             </li>
           )}
         </ul>
+
+        {/* Load more button */}
+        {chatMutation.data?.pagination?.hasMore && !chatMutation.isPending && (
+          <div className="flex justify-center">
+            <button
+              onClick={handleLoadMore}
+              className="flex items-center gap-2 text-blue-500 hover:text-blue-600"
+              aria-label="Load more results"
+            >
+              <ChevronDownIcon className="h-5 w-5" />
+              Load more results
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Message input form */}
       <form 
         onSubmit={handleSubmit} 
         className="flex gap-2" 

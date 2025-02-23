@@ -1,11 +1,12 @@
-import { Server } from '@modelcontextprotocol/sdk/server';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio';
+import { Server } from '@modelcontextprotocol/sdk/dist/esm/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/dist/esm/server/stdio.js';
 import {
   CallToolRequestSchema,
   ErrorCode,
   ListToolsRequestSchema,
   McpError,
-} from '@modelcontextprotocol/sdk/types';
+  Request,
+} from '@modelcontextprotocol/sdk/dist/esm/types.js';
 import axios from 'axios';
 
 const API_KEY = process.env.FIRECRAWL_API_KEY;
@@ -39,7 +40,7 @@ export class FirecrawlMcpServer {
 
     this.setupToolHandlers();
     
-    this.server.onerror = (error) => console.error('[MCP Error]', error);
+    this.server.onerror = (error: Error) => console.error('[MCP Error]', error);
   }
 
   private setupToolHandlers() {
@@ -103,7 +104,7 @@ export class FirecrawlMcpServer {
       ],
     }));
 
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async (request: Request) => {
       try {
         switch (request.params.name) {
           case 'firecrawl_search': {
