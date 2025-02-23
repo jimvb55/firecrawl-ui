@@ -1,96 +1,205 @@
-# FireCrawl UI
+# 🔥 FireCrawl UI
 
-A web interface for FireCrawl web scraping capabilities with an integrated Model Context Protocol (MCP) server.
+<div align="center">
 
-## Features
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Express.js](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge)](https://expressjs.com/)
+[![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-- Self-contained FireCrawl MCP server implementation
-- Web scraping capabilities including search and content extraction
-- Express.js backend with TypeScript
-- Graceful shutdown handling
-- Environment-based configuration
+A powerful web interface for FireCrawl web scraping capabilities with integrated AI analysis for direct mail campaign research and design.
 
-## Setup
+[Features](#-features) •
+[Setup](#-setup) •
+[Documentation](#-documentation) •
+[Contributing](#-contributing)
+
+</div>
+
+## ✨ Features
+
+### Core Capabilities
+- 🤖 Integrated FireCrawl MCP server for advanced web scraping
+- 🧠 OpenAI-powered business analysis and campaign recommendations
+- 🎯 Targeted audience and market research
+- 🎨 Design recommendations for direct mail campaigns
+- 📊 Competitor analysis and market positioning
+
+### Technical Features
+- 🛡️ Comprehensive error handling and validation
+- 🚀 Real-time content processing and analysis
+- 📱 Responsive and accessible UI components
+- 🔄 Automatic rate limiting and request management
+- 🔒 Secure environment configuration
+
+## 🚀 Setup
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+- FireCrawl API key
+- OpenAI API key
+
+### Installation
 
 1. Clone the repository:
-```bash
+\`\`\`bash
 git clone https://github.com/your-username/firecrawl-ui.git
 cd firecrawl-ui
-```
+\`\`\`
 
 2. Install dependencies:
-```bash
-# Install backend dependencies
-cd backend
+\`\`\`bash
+# Install root dependencies
 npm install
-```
 
-3. Create a `.env` file in the backend directory:
-```
+# Install frontend dependencies
+cd frontend
+npm install
+
+# Install backend dependencies
+cd ../backend
+npm install
+\`\`\`
+
+3. Configure environment variables:
+
+Create a \`.env\` file in the backend directory:
+\`\`\`env
+# Server Configuration
 PORT=3000
+NODE_ENV=development
+
+# API Keys
 FIRECRAWL_API_KEY=your_firecrawl_api_key
-```
+OPENAI_API_KEY=your_openai_api_key
 
-4. Start the development server:
-```bash
-# In the backend directory
+# Rate Limiting
+RATE_LIMIT_WINDOW=60000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Cache Configuration (optional)
+CACHE_TTL=3600
+CACHE_MAX_SIZE=100
+\`\`\`
+
+### API Key Setup
+
+#### FireCrawl API Key
+1. Visit the [FireCrawl Developer Portal](https://firecrawl.dev)
+2. Create or log into your account
+3. Navigate to API Keys section
+4. Generate a new API key
+5. Copy the key to your \`.env\` file
+
+#### OpenAI API Key
+1. Visit [OpenAI's Platform](https://platform.openai.com)
+2. Sign up or log in to your account
+3. Go to API Keys section
+4. Create a new secret key
+5. Copy the key to your \`.env\` file
+
+### Starting the Application
+
+1. Start the development server:
+\`\`\`bash
+# In the root directory
 npm run dev
-```
+\`\`\`
 
-This will start both the Express server and the integrated FireCrawl MCP server.
+This will concurrently start:
+- Frontend at http://localhost:5173
+- Backend at http://localhost:3000
+- Integrated FireCrawl MCP server
 
-## Project Structure
+## 📖 Documentation
 
-```
+### Project Structure
+\`\`\`
 firecrawl-ui/
+├── frontend/                   # React frontend application
+│   ├── src/
+│   │   ├── components/        # React components
+│   │   ├── hooks/            # Custom React hooks
+│   │   ├── services/         # API service integrations
+│   │   └── types/           # TypeScript type definitions
+│   └── public/              # Static assets
 ├── backend/
 │   ├── src/
-│   │   ├── mcp/
-│   │   │   └── firecrawl.ts    # Integrated MCP server implementation
-│   │   ├── services/
-│   │   │   └── firecrawl.ts    # FireCrawl service integration
-│   │   └── index.ts            # Express server setup
-│   └── package.json
-├── test-mcp.js                 # MCP testing utility
-└── package.json
-```
+│   │   ├── mcp/             # MCP server implementation
+│   │   ├── middleware/      # Express middleware
+│   │   ├── routes/         # API routes
+│   │   ├── services/       # Business logic
+│   │   └── types/         # TypeScript types
+│   └── tests/             # Backend tests
+└── docker/                # Docker configuration
+\`\`\`
 
-## Environment Variables
+### Key Components
 
-The following environment variables are required:
+#### Business Analysis
+The application provides comprehensive business analysis including:
+- Target audience identification
+- Competitive landscape analysis
+- Market positioning
+- Brand voice and visual style
+- Promotional strategy recommendations
 
-- `FIRECRAWL_API_KEY`: Your FireCrawl API key for web scraping
-- `PORT`: Backend server port (default: 3000)
+#### Content Display
+Multiple view options for scraped content:
+- Business Information
+- Campaign Analysis
+- Image Gallery
+- Raw Data
+- Alternative Results
 
-## Integrated MCP Server
+#### Error Handling
+Robust error handling system with:
+- Custom error classes
+- Validation middleware
+- Rate limiting
+- Response sanitization
 
-The FireCrawl MCP server is integrated directly into the backend application, providing:
+## 🤝 Contributing
 
-### Available Tools
-
-1. `firecrawl_search`: Search and retrieve content from web pages
-   - Parameters:
-     - query: Search query string
-     - limit: Maximum number of results (optional)
-     - scrapeOptions: Configuration for content extraction
-
-2. `firecrawl_scrape`: Scrape content from a single webpage
-   - Parameters:
-     - url: URL to scrape
-     - formats: Content formats to extract (optional)
-     - onlyMainContent: Filter out non-main content (optional)
-     - includeTags: HTML tags to include (optional)
-
-The MCP server starts automatically with the Express server and handles graceful shutdown.
-
-## Contributing
+We welcome contributions! Please follow these steps:
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create your feature branch:
+   \`\`\`bash
+   git checkout -b feature/amazing-feature
+   \`\`\`
+3. Commit your changes:
+   \`\`\`bash
+   git commit -m 'feat: add amazing feature'
+   \`\`\`
+4. Push to the branch:
+   \`\`\`bash
+   git push origin feature/amazing-feature
+   \`\`\`
 5. Open a Pull Request
 
-## License
+### Commit Convention
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+- \`feat:\` New features
+- \`fix:\` Bug fixes
+- \`docs:\` Documentation changes
+- \`style:\` Code style changes
+- \`refactor:\` Code refactoring
+- \`test:\` Adding or modifying tests
+- \`chore:\` Maintenance tasks
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+Made with ❤️ by the FireCrawl Team
+
+</div>
