@@ -1,12 +1,12 @@
-import { Server } from '@modelcontextprotocol/sdk/dist/esm/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/dist/esm/server/stdio.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
   ErrorCode,
   ListToolsRequestSchema,
   McpError,
-  Request,
-} from '@modelcontextprotocol/sdk/dist/esm/types.js';
+  Request
+} from '@modelcontextprotocol/sdk/types.js';
 import axios from 'axios';
 
 const API_KEY = process.env.FIRECRAWL_API_KEY;
@@ -105,6 +105,14 @@ export class FirecrawlMcpServer {
     }));
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request: Request) => {
+      if (!request.params?.name) {
+        throw new McpError(ErrorCode.InvalidRequest, 'Tool name is required');
+      }
+
+      if (!request.params.arguments) {
+        throw new McpError(ErrorCode.InvalidRequest, 'Tool arguments are required');
+      }
+
       try {
         switch (request.params.name) {
           case 'firecrawl_search': {

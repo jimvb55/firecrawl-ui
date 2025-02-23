@@ -9,21 +9,32 @@ interface FirecrawlExtractSchema {
     hours: string;
     website: string;
     social_media: string[];
+    business_type: string;
+    service_area: string[];
   };
   branding: {
     colors: string[];
     logo_url?: string;
     images: string[];
+    brand_voice: string;
+    visual_style: string;
   };
   marketing: {
-    target_audience?: string;
+    target_audience: {
+      demographics: string[];
+      interests: string[];
+      income: string;
+      location: string;
+    };
     promotions: Array<{
       type: string;
       description: string;
       value: string;
       expiration?: string;
+      conditions?: string;
     }>;
     key_messages: string[];
+    unique_selling_points: string[];
   };
 }
 
@@ -70,19 +81,30 @@ export async function extractBusinessInfo(url: string): Promise<Partial<Business
             phone: '',
             hours: '',
             website: '',
-            social_media: []
+            social_media: [],
+            business_type: '',
+            service_area: []
           },
           branding: {
             colors: [],
-            images: []
+            images: [],
+            brand_voice: '',
+            visual_style: ''
           },
           marketing: {
+            target_audience: {
+              demographics: [],
+              interests: [],
+              income: '',
+              location: ''
+            },
             promotions: [],
-            key_messages: []
+            key_messages: [],
+            unique_selling_points: []
           }
         },
         systemPrompt: "You are a business information extractor. Extract key business details, branding elements, and promotional content.",
-        prompt: "Extract all available business information, focusing on contact details, branding, and current promotions or deals."
+        prompt: "Extract all available business information, focusing on contact details, branding, marketing strategy, target audience, and unique selling points."
       }
     });
 
@@ -94,17 +116,22 @@ export async function extractBusinessInfo(url: string): Promise<Partial<Business
         phone: extractedData.business_info.phone,
         hours: extractedData.business_info.hours,
         website: extractedData.business_info.website,
-        socialMedia: extractedData.business_info.social_media
+        socialMedia: extractedData.business_info.social_media,
+        businessType: extractedData.business_info.business_type,
+        serviceArea: extractedData.business_info.service_area
       },
       branding: {
         colors: extractedData.branding.colors,
         logo: extractedData.branding.logo_url || '',
-        images: extractedData.branding.images
+        images: extractedData.branding.images,
+        brandVoice: extractedData.branding.brand_voice,
+        visualStyle: extractedData.branding.visual_style
       },
       marketing: {
-        targetAudience: extractedData.marketing.target_audience || '',
+        targetAudience: extractedData.marketing.target_audience,
         promotions: extractedData.marketing.promotions,
-        keyMessages: extractedData.marketing.key_messages
+        keyMessages: extractedData.marketing.key_messages,
+        uniqueSellingPoints: extractedData.marketing.unique_selling_points
       }
     };
   } catch (error) {
