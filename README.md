@@ -1,93 +1,96 @@
-# FireCrawl Chat Interface
+# FireCrawl UI
 
-A modern web interface for FireCrawl, featuring real-time chat, multiple display formats, and export capabilities.
+A web interface for FireCrawl web scraping capabilities with an integrated Model Context Protocol (MCP) server.
 
 ## Features
 
-- 💬 Real-time chat interface with FireCrawl
-- 📊 Multiple display formats (Text, JSON, Markdown, Raw)
-- 💾 Export functionality (JSON, Markdown, Text)
-- 🚀 Redis caching for improved performance
-- 🎨 Modern, responsive design with Tailwind CSS
-- ♿ Accessibility features
-- 🐳 Docker containerization
+- Self-contained FireCrawl MCP server implementation
+- Web scraping capabilities including search and content extraction
+- Express.js backend with TypeScript
+- Graceful shutdown handling
+- Environment-based configuration
 
-## Tech Stack
-
-- Frontend:
-  - React
-  - TypeScript
-  - Tailwind CSS
-  - React Query
-  - CodeMirror
-  - HeadlessUI
-
-- Backend:
-  - Node.js
-  - Express
-  - TypeScript
-  - Redis
-  - FireCrawl MCP
-
-- Infrastructure:
-  - Docker
-  - Docker Compose
-  - Nginx
-
-## Getting Started
-
-### Prerequisites
-
-- Docker and Docker Compose
-- FireCrawl API Key
-
-### Installation
+## Setup
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/jimvb55/firecrawl-ui.git
-   cd firecrawl-ui
-   ```
+```bash
+git clone https://github.com/your-username/firecrawl-ui.git
+cd firecrawl-ui
+```
 
-2. Create a `.env` file in the root directory:
-   ```env
-   FIRECRAWL_API_KEY=your_api_key_here
-   REDIS_URL=redis://redis:6379
-   VITE_API_URL=http://localhost:3000
-   ```
+2. Install dependencies:
+```bash
+# Install backend dependencies
+cd backend
+npm install
+```
 
-3. Build and run with Docker Compose:
-   ```bash
-   docker-compose up --build
-   ```
+3. Create a `.env` file in the backend directory:
+```
+PORT=3000
+FIRECRAWL_API_KEY=your_firecrawl_api_key
+```
 
-4. Access the application:
-   - Frontend: http://localhost:80
-   - Backend API: http://localhost:3000
+4. Start the development server:
+```bash
+# In the backend directory
+npm run dev
+```
 
-### Development
+This will start both the Express server and the integrated FireCrawl MCP server.
 
-For local development:
+## Project Structure
 
-1. Frontend:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+```
+firecrawl-ui/
+├── backend/
+│   ├── src/
+│   │   ├── mcp/
+│   │   │   └── firecrawl.ts    # Integrated MCP server implementation
+│   │   ├── services/
+│   │   │   └── firecrawl.ts    # FireCrawl service integration
+│   │   └── index.ts            # Express server setup
+│   └── package.json
+├── test-mcp.js                 # MCP testing utility
+└── package.json
+```
 
-2. Backend:
-   ```bash
-   cd backend
-   npm install
-   npm run dev
-   ```
+## Environment Variables
 
-3. Redis:
-   ```bash
-   docker run -p 6379:6379 redis:alpine
-   ```
+The following environment variables are required:
+
+- `FIRECRAWL_API_KEY`: Your FireCrawl API key for web scraping
+- `PORT`: Backend server port (default: 3000)
+
+## Integrated MCP Server
+
+The FireCrawl MCP server is integrated directly into the backend application, providing:
+
+### Available Tools
+
+1. `firecrawl_search`: Search and retrieve content from web pages
+   - Parameters:
+     - query: Search query string
+     - limit: Maximum number of results (optional)
+     - scrapeOptions: Configuration for content extraction
+
+2. `firecrawl_scrape`: Scrape content from a single webpage
+   - Parameters:
+     - url: URL to scrape
+     - formats: Content formats to extract (optional)
+     - onlyMainContent: Filter out non-main content (optional)
+     - includeTags: HTML tags to include (optional)
+
+The MCP server starts automatically with the Express server and handles graceful shutdown.
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-MIT License - see LICENSE file for details
+This project is licensed under the MIT License - see the LICENSE file for details.
