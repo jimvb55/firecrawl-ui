@@ -1,5 +1,7 @@
-import express from 'express';
-import { redis } from '../index';
+import express, { Request, Response, NextFunction } from 'express';
+import { analyzeUserMessage, processBusinessInfo } from '../services/openai.js';
+import { searchBusiness, extractBusinessInfo, scrapeImages } from '../services/firecrawl.js';
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -11,90 +13,71 @@ interface ChatRequest {
   history: ChatMessage[];
 }
 
-interface ExportRequest {
-  history: ChatMessage[];
-  format: 'json' | 'markdown' | 'text';
-}
-
-interface ChatResponse {
-  response: string;
-  type: string;
-  timestamp: string;
-}
-
-interface ExportResponse {
-  data: string;
-}
-
 export const setupFirecrawlRoutes = () => {
   const router = express.Router();
 
   // Chat endpoint
-  router.post('/chat', (req, res, next) => {
-    const { message, history } = req.body as ChatRequest;
-    
-    handleChat(message, history)
-      .then(response => res.json(response))
-      .catch(next);
-  });
+  router.post('/chat', async (req: Request<{}, {}, ChatRequest>, res: Response, next: NextFunction) => {
+    try {
+      const { message, history } = req.body;
 
-  // Export chat history
-  router.post('/export', (req, res, next) => {
-    const { history, format } = req.body as ExportRequest;
-    
-    handleExport(history, format)
-      .then(data => res.json({ data }))
-      .catch(next);
+      // Convert chat history to OpenAI format
+      const openAIHistory: ChatCompletionMessageParam[] = history.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      // Analyze user message with OpenAI
+      const analysis = await analyzeUserMessage(message, openAIHistory);
+
+      if (analysis.type === 'function_call') {
+        switch (analysis.function) {
+          case 'analyze_business_query': {
+            const { business_name, location } = analysis.arguments;
+            const searchQuery = location ? `${business_name} ${location}` : business_name;
+            const searchResults = await searchBusiness(searchQuery);
+
+            if (searchResults.length > 0) {
+              const businessInfo = await extractBusinessInfo(searchResults[0].url);
+              const images = await scrapeImages(searchResults[0].url);
+              
+              // Process the gathered information with OpenAI
+              const processedInfo = await processBusinessInfo(
+                { ...businessInfo, images },
+                [...openAIHistory, { role: 'assistant', content: analysis.message || '' }]
+              );
+
+              return res.json({
+                type: 'business_info',
+                response: processedInfo.content,
+                data: businessInfo,
+                images: images
+              });
+            }
+            break;
+          }
+
+          case 'extract_business_info': {
+            // Handle direct business info extraction
+            return res.json({
+              type: 'function_result',
+              response: analysis.message,
+              data: analysis.arguments
+            });
+          }
+        }
+      }
+
+      // Default response if no function was called
+      return res.json({
+        type: 'message',
+        response: analysis.type === 'message' ? analysis.content : analysis.message,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      next(error);
+    }
   });
 
   return router;
 };
-
-async function handleChat(message: string, history: ChatMessage[]): Promise<ChatResponse> {
-  // Check cache first
-  const cacheKey = `chat:${JSON.stringify({ message, history })}`;
-  const cachedResponse = await redis.get(cacheKey);
-  
-  if (cachedResponse) {
-    return JSON.parse(cachedResponse);
-  }
-
-  // Process the message using FireCrawl MCP
-  const response = await processFirecrawlRequest(message, history);
-  
-  // Cache the response
-  await redis.setex(cacheKey, 3600, JSON.stringify(response));
-  
-  return response;
-}
-
-async function handleExport(history: ChatMessage[], format: 'json' | 'markdown' | 'text'): Promise<string> {
-  return exportChatHistory(history, format);
-}
-
-async function processFirecrawlRequest(message: string, history: ChatMessage[]): Promise<ChatResponse> {
-  // TODO: Implement FireCrawl MCP integration
-  // This will be implemented once we set up the frontend and can test the integration
-  return {
-    response: "FireCrawl integration pending",
-    type: "text",
-    timestamp: new Date().toISOString()
-  };
-}
-
-async function exportChatHistory(history: ChatMessage[], format: 'json' | 'markdown' | 'text'): Promise<string> {
-  switch (format) {
-    case 'json':
-      return JSON.stringify(history, null, 2);
-    case 'markdown':
-      return history.map(msg => 
-        `### ${msg.role}\n${msg.content}\n`
-      ).join('\n');
-    case 'text':
-      return history.map(msg => 
-        `[${msg.role}]: ${msg.content}`
-      ).join('\n\n');
-    default:
-      throw new Error('Unsupported export format');
-  }
-}

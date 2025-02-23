@@ -1,23 +1,24 @@
 import { Request, Response, NextFunction } from 'express';
 
-interface ApiError extends Error {
-  statusCode?: number;
+interface ErrorWithStatus extends Error {
+  status?: number;
 }
 
 export const errorHandler = (
-  err: ApiError,
-  req: Request,
+  err: ErrorWithStatus,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
-  const statusCode = err.statusCode || 500;
+  console.error('Error:', err);
+
+  const status = err.status || 500;
   const message = err.message || 'Internal Server Error';
 
-  res.status(statusCode).json({
-    success: false,
+  res.status(status).json({
     error: {
       message,
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+      status,
     },
   });
 };
