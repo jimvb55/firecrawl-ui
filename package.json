@@ -1,0 +1,11 @@
+{
+  "name": "firecrawl-ui",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node test-mcp.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}

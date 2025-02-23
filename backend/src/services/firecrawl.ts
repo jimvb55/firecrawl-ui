@@ -1,22 +1,5 @@
-import axios from 'axios';
-import dotenv from 'dotenv';
 import type { BusinessInfo } from './openai.js';
-
-// Load environment variables
-dotenv.config();
-
-if (!process.env.FIRECRAWL_API_KEY) {
-  throw new Error('FIRECRAWL_API_KEY environment variable is required');
-}
-
-const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY;
-const api = axios.create({
-  baseURL: 'https://api.firecrawl.com',
-  headers: {
-    'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
-    'Content-Type': 'application/json',
-  }
-});
+import axios from 'axios';
 
 interface FirecrawlExtractSchema {
   business_info: {
@@ -44,14 +27,25 @@ interface FirecrawlExtractSchema {
   };
 }
 
-export async function searchBusiness(query: string) {
+interface SearchResult {
+  url: string;
+  title: string;
+  description: string;
+  content?: string;
+}
+
+export async function searchBusiness(query: string): Promise<SearchResult[]> {
   try {
-    const response = await api.post('/search', {
-      query,
-      limit: 5,
-      scrapeOptions: {
-        formats: ['markdown'],
-        onlyMainContent: true
+    const response = await axios.post('http://localhost:3001/mcp/tool', {
+      server_name: 'github.com/mendableai/firecrawl-mcp-server',
+      tool_name: 'firecrawl_search',
+      arguments: {
+        query,
+        limit: 5,
+        scrapeOptions: {
+          formats: ['markdown'],
+          onlyMainContent: true
+        }
       }
     });
 
@@ -64,34 +58,35 @@ export async function searchBusiness(query: string) {
 
 export async function extractBusinessInfo(url: string): Promise<Partial<BusinessInfo>> {
   try {
-    const schema: FirecrawlExtractSchema = {
-      business_info: {
-        name: '',
-        address: '',
-        phone: '',
-        hours: '',
-        website: '',
-        social_media: []
-      },
-      branding: {
-        colors: [],
-        images: []
-      },
-      marketing: {
-        promotions: [],
-        key_messages: []
+    const response = await axios.post('http://localhost:3001/mcp/tool', {
+      server_name: 'github.com/mendableai/firecrawl-mcp-server',
+      tool_name: 'firecrawl_extract',
+      arguments: {
+        urls: [url],
+        schema: {
+          business_info: {
+            name: '',
+            address: '',
+            phone: '',
+            hours: '',
+            website: '',
+            social_media: []
+          },
+          branding: {
+            colors: [],
+            images: []
+          },
+          marketing: {
+            promotions: [],
+            key_messages: []
+          }
+        },
+        systemPrompt: "You are a business information extractor. Extract key business details, branding elements, and promotional content.",
+        prompt: "Extract all available business information, focusing on contact details, branding, and current promotions or deals."
       }
-    };
-
-    const response = await api.post('/extract', {
-      urls: [url],
-      schema,
-      systemPrompt: "You are a business information extractor. Extract key business details, branding elements, and promotional content.",
-      prompt: "Extract all available business information, focusing on contact details, branding, and current promotions or deals."
     });
 
-    // Transform FireCrawl response to BusinessInfo format
-    const extractedData = response.data[0];
+    const extractedData = response.data[0] as FirecrawlExtractSchema;
     return {
       details: {
         name: extractedData.business_info.name,
@@ -118,32 +113,43 @@ export async function extractBusinessInfo(url: string): Promise<Partial<Business
   }
 }
 
-export async function scrapeImages(url: string) {
+interface ScrapedImage {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+}
+
+export async function scrapeImages(url: string): Promise<ScrapedImage[]> {
   try {
-    const response = await api.post('/scrape', {
-      url,
-      formats: ['html'],
-      onlyMainContent: true,
-      includeTags: ['img'],
-      actions: [
-        {
-          type: 'executeJavascript',
-          script: `
-            const images = Array.from(document.images)
-              .map(img => ({
-                src: img.src,
-                alt: img.alt,
-                width: img.width,
-                height: img.height
-              }))
-              .filter(img => img.width > 100 && img.height > 100);
-            return images;
-          `
-        }
-      ]
+    const response = await axios.post('http://localhost:3001/mcp/tool', {
+      server_name: 'github.com/mendableai/firecrawl-mcp-server',
+      tool_name: 'firecrawl_scrape',
+      arguments: {
+        url,
+        formats: ['html'],
+        onlyMainContent: true,
+        includeTags: ['img'],
+        actions: [
+          {
+            type: 'executeJavascript',
+            script: `
+              const images = Array.from(document.images)
+                .map(img => ({
+                  src: img.src,
+                  alt: img.alt,
+                  width: img.width,
+                  height: img.height
+                }))
+                .filter(img => img.width > 100 && img.height > 100);
+              return images;
+            `
+          }
+        ]
+      }
     });
 
-    return response.data;
+    return response.data as ScrapedImage[];
   } catch (error) {
     console.error('FireCrawl scrape error:', error);
     throw new Error('Failed to scrape images');
