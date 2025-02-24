@@ -35,11 +35,17 @@ interface ChatResponse {
   };
   alternativeResults?: SearchResult[];
   timestamp?: string;
-  error?: {
-    type: string;
-    message: string;
-    details?: any;
-  };
+}
+
+interface APIError {
+  type: string;
+  message: string;
+  details?: unknown;
+  retryAfter?: number;
+}
+
+interface ErrorResponse {
+  error: APIError;
 }
 
 interface ChatMutationVariables {
@@ -59,23 +65,64 @@ export function Chat({ onNewMessage, onBusinessData }: ChatProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
-  const chatMutation = useMutation<ChatResponse, Error, ChatMutationVariables>({
+  const chatMutation = useMutation<ChatResponse, APIError, ChatMutationVariables>({
     mutationFn: async ({ message, history, page = 1 }) => {
-      const response = await fetch(`/api/firecrawl/chat?page=${page}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message, history }),
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error?.message || 'Failed to send message');
+      const maxRetries = 3;
+      let retryCount = 0;
+      let lastError: APIError | null = null;
+
+      while (retryCount < maxRetries) {
+        try {
+          const response = await fetch(`/api/firecrawl/chat?page=${page}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message, history }),
+          });
+          
+          const data = await response.json();
+          
+          if (!response.ok) {
+            const errorResponse = data as ErrorResponse;
+            const error: APIError = {
+              type: errorResponse.error.type,
+              message: errorResponse.error.message,
+              details: errorResponse.error.details,
+              retryAfter: errorResponse.error.retryAfter
+            };
+
+            // If it's a retryable error and we haven't exceeded max retries
+            if (
+              (error.type === 'RetryableError' || 
+               error.type === 'OpenAIError' ||
+               error.type === 'FirecrawlError' ||
+               error.type === 'MCPConnectionError') &&
+              retryCount < maxRetries
+            ) {
+              lastError = error;
+              retryCount++;
+              
+              // Wait for retryAfter duration or use exponential backoff
+              const delay = error.retryAfter || Math.min(1000 * Math.pow(2, retryCount), 10000);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue;
+            }
+
+            throw error;
+          }
+          
+          return data;
+        } catch (error) {
+          lastError = error as APIError;
+          if (retryCount === maxRetries - 1) {
+            throw lastError;
+          }
+          retryCount++;
+        }
       }
-      
-      return data;
+
+      throw lastError || new Error('Failed to send message after retries');
     },
     onSuccess: (data) => {
       // Clear any previous errors
@@ -93,9 +140,33 @@ export function Chat({ onNewMessage, onBusinessData }: ChatProps) {
         onBusinessData(data.data, data.images || []);
       }
     },
-    onError: (error) => {
-      setError(error.message);
-      console.error('Chat error:', error);
+    onError: (error: APIError) => {
+      let errorMessage = error.message;
+      
+      // Enhance error message based on error type
+      switch (error.type) {
+        case 'ValidationError':
+          errorMessage = 'Invalid input: ' + error.message;
+          break;
+        case 'OpenAIError':
+          errorMessage = 'AI processing error: ' + error.message;
+          break;
+        case 'FirecrawlError':
+          errorMessage = 'Data extraction error: ' + error.message;
+          break;
+        case 'MCPConnectionError':
+          errorMessage = 'Service connection error: ' + error.message;
+          break;
+        default:
+          errorMessage = 'An error occurred: ' + error.message;
+      }
+      
+      setError(errorMessage);
+      console.error('Chat error:', {
+        type: error.type,
+        message: error.message,
+        details: error.details
+      });
     },
   });
 

@@ -1,17 +1,22 @@
 import OpenAI from 'openai';
 import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import dotenv from 'dotenv';
+import { OpenAIError, ValidationError } from '../types/errors.js';
+import { withRetry } from '../utils/retry.js';
 
-// Load environment variables
-dotenv.config();
+let openai: OpenAI;
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error('OPENAI_API_KEY environment variable is required');
+function initializeOpenAI() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new OpenAIError('OPENAI_API_KEY environment variable is required');
+  }
+  
+  if (!openai) {
+    openai = new OpenAI({ apiKey });
+  }
+  
+  return openai;
 }
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 export interface BusinessInfo {
   details: {
@@ -181,14 +186,44 @@ const functions = [
   }
 ];
 
-export async function analyzeUserMessage(message: string, history: ChatCompletionMessageParam[], options: { includeMarketAnalysis?: boolean } = {}) {
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages: [
-        {
-          role: "system",
-          content: `You are a direct mail advertising assistant specializing in local business analysis and marketing strategy. Help analyze businesses comprehensively, including their market position, competitive landscape, and customer demographics to create effective direct mail campaigns.
+interface AnalysisResponse {
+  type: 'function_call' | 'message';
+  function?: string;
+  arguments?: Record<string, unknown>;
+  content?: string;
+  message?: string;
+}
+
+interface ProcessedResponse {
+  type: 'analysis';
+  content: string;
+  sections: {
+    targetAudience: string;
+    competitiveAdvantage: string;
+    offers: string;
+    design: string;
+    timing: string;
+  };
+}
+
+function validateOpenAIResponse<T>(response: unknown, type: string): T {
+  if (!response || typeof response !== 'object') {
+    throw new ValidationError(`Invalid OpenAI response: Expected ${type}`);
+  }
+  return response as T;
+}
+
+export const analyzeUserMessage = createRetryableOperation(
+  // Initialize OpenAI instance before making API calls
+  async (message: string, history: ChatCompletionMessageParam[], options: { includeMarketAnalysis?: boolean } = {}): Promise<AnalysisResponse> => {
+    try {
+      const client = initializeOpenAI();
+      const response = await client.chat.completions.create({
+        model: "gpt-4-turbo-preview",
+        messages: [
+          {
+            role: "system",
+            content: `You are a direct mail advertising assistant specializing in local business analysis and marketing strategy. Help analyze businesses comprehensively, including their market position, competitive landscape, and customer demographics to create effective direct mail campaigns.
 
 Key responsibilities:
 1. Analyze business information and local market data
@@ -199,41 +234,48 @@ Key responsibilities:
 6. Consider seasonal factors and local market trends
 
 Focus on extracting actionable insights that will help create targeted and effective direct mail campaigns.`
-        },
-        ...history,
-        { role: "user", content: message }
-      ],
-      functions,
-      function_call: "auto",
-    });
+          },
+          ...history,
+          { role: "user", content: message }
+        ],
+        functions,
+        function_call: "auto",
+      });
 
-    const responseMessage = response.choices[0].message;
+      const responseMessage = response.choices[0].message;
 
-    if (responseMessage.function_call) {
-      const functionName = responseMessage.function_call.name;
-      const args = JSON.parse(responseMessage.function_call.arguments);
-      
-      return {
-        type: "function_call",
-        function: functionName,
-        arguments: args,
-        message: responseMessage.content
-      };
+      if (responseMessage.function_call) {
+        const functionName = responseMessage.function_call.name;
+        const args = JSON.parse(responseMessage.function_call.arguments);
+        
+        return validateOpenAIResponse<AnalysisResponse>({
+          type: "function_call",
+          function: functionName,
+          arguments: args,
+          message: responseMessage.content
+        }, 'function call response');
+      }
+
+      return validateOpenAIResponse<AnalysisResponse>({
+        type: "message",
+        content: responseMessage.content
+      }, 'message response');
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new OpenAIError(
+          `Failed to analyze message: ${error.message}`,
+          { originalError: error }
+        );
+      }
+      throw error;
     }
-
-    return {
-      type: "message",
-      content: responseMessage.content
-    };
-  } catch (error) {
-    console.error('OpenAI API error:', error);
-    throw new Error('Failed to process message with OpenAI');
   }
-}
+);
 
-export async function processBusinessInfo(data: any, history: ChatCompletionMessageParam[]) {
-  try {
-    const systemPrompt = `You are a direct mail advertising specialist with expertise in local business marketing. 
+export const processBusinessInfo = createRetryableOperation(
+  async (data: any, history: ChatCompletionMessageParam[]): Promise<ProcessedResponse> => {
+    try {
+      const systemPrompt = `You are a direct mail advertising specialist with expertise in local business marketing. 
 Your task is to analyze the provided business information and create detailed recommendations for direct mail campaigns.
 
 Focus on:
@@ -270,49 +312,74 @@ Focus on:
 
 Provide actionable recommendations that will help create effective direct mail pieces for either Valpak or Clipper Magazine formats.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        ...history,
-        {
-          role: "user",
-          content: `Analyze this business information and provide detailed recommendations for a direct mail campaign. 
+      const client = initializeOpenAI();
+      const response = await client.chat.completions.create({
+        model: "gpt-4-turbo-preview",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          ...history,
+          {
+            role: "user",
+            content: `Analyze this business information and provide detailed recommendations for a direct mail campaign. 
 Consider the target audience, competitive landscape, and local market conditions.
 
 Business Data:
 ${JSON.stringify(data, null, 2)}`,
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 2000,
-    });
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+      });
 
-    // Process the response into structured sections
-    const analysisContent = response.choices[0].message.content || '';
-    
-    return {
-      type: "analysis",
-      content: analysisContent,
-      sections: {
-        targetAudience: extractSection(analysisContent, "Target Audience"),
-        competitiveAdvantage: extractSection(analysisContent, "Competitive Advantage"),
-        offers: extractSection(analysisContent, "Offer Development"),
-        design: extractSection(analysisContent, "Design Recommendations"),
-        timing: extractSection(analysisContent, "Campaign Timing")
+      const analysisContent = response.choices[0].message.content || '';
+      
+      return validateOpenAIResponse<ProcessedResponse>({
+        type: "analysis",
+        content: analysisContent,
+        sections: {
+          targetAudience: extractSection(analysisContent, "Target Audience"),
+          competitiveAdvantage: extractSection(analysisContent, "Competitive Advantage"),
+          offers: extractSection(analysisContent, "Offer Development"),
+          design: extractSection(analysisContent, "Design Recommendations"),
+          timing: extractSection(analysisContent, "Campaign Timing")
+        }
+      }, 'processed business info');
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new OpenAIError(
+          `Failed to process business information: ${error.message}`,
+          { originalError: error }
+        );
       }
-    };
-  } catch (error) {
-    console.error('OpenAI API error:', error);
-    throw new Error('Failed to process business information with OpenAI');
+      throw error;
+    }
   }
-}
+);
 
 function extractSection(content: string, sectionName: string): string {
   const regex = new RegExp(`${sectionName}[:\\n]([\\s\\S]*?)(?=\\n\\s*[A-Z][A-Za-z\\s]+:|$)`);
   const match = content.match(regex);
   return match ? match[1].trim() : '';
+}
+
+function createRetryableOperation<T extends (...args: any[]) => Promise<any>>(
+  operation: T
+): T {
+  return ((...args: Parameters<T>) => 
+    withRetry(() => operation(...args), {
+      maxAttempts: 3,
+      initialDelay: 2000, // Start with a longer delay for OpenAI
+      maxDelay: 15000,    // Allow longer max delay
+      retryableErrors: [
+        'rate_limit',
+        'insufficient_quota',
+        'invalid_request_error',
+        /^5\d{2}/,
+        'OpenAI Error'
+      ]
+    })
+  ) as T;
 }

@@ -1,67 +1,44 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../types/errors.js';
+import { FirecrawlError, ValidationError, OpenAIError } from '../types/errors.js';
 
-export const errorHandler = (
-  err: Error,
-  _req: Request,
+export function errorHandler(
+  error: Error,
+  req: Request,
   res: Response,
-  _next: NextFunction
-) => {
-  console.error('Error:', err);
+  next: NextFunction
+) {
+  console.error('Error:', error);
 
-  if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
-      error: {
-        type: err.type,
-        message: err.message,
-        details: err.details,
-        status: err.statusCode
-      }
+  if (error instanceof ValidationError) {
+    return res.status(400).json({
+      success: false,
+      error: 'Validation Error',
+      message: error.message
     });
   }
 
-  // Handle axios errors
-  if (err.name === 'AxiosError') {
-    const axiosError = err as any;
-    return res.status(502).json({
-      error: {
-        type: 'ExternalAPIError',
-        message: 'External API request failed',
-        details: {
-          message: axiosError.message,
-          response: axiosError.response?.data
-        },
-        status: 502
-      }
+  if (error instanceof FirecrawlError) {
+    const status = error.details?.status || 500;
+    return res.status(status).json({
+      success: false,
+      error: 'FireCrawl Error',
+      message: error.message,
+      details: error.details
     });
   }
 
-  // Handle OpenAI API errors
-  if (err.name === 'OpenAIError') {
-    return res.status(502).json({
-      error: {
-        type: 'ExternalAPIError',
-        message: 'OpenAI API request failed',
-        details: {
-          message: err.message
-        },
-        status: 502
-      }
+  if (error instanceof OpenAIError) {
+    return res.status(500).json({
+      success: false,
+      error: 'OpenAI Error',
+      message: error.message
     });
   }
 
-  // Default error response
-  res.status(500).json({
-    error: {
-      type: 'InternalServerError',
-      message: 'An unexpected error occurred',
-      status: 500
-    }
+  // Default error
+  return res.status(500).json({
+    success: false,
+    error: 'Internal Server Error',
+    message: error.message
   });
-};
-
-// Catch-all for unhandled promise rejections
-process.on('unhandledRejection', (reason: any) => {
-  console.error('Unhandled Rejection:', reason);
-  // Let the process continue instead of crashing
-});
+}

@@ -20,7 +20,7 @@ A powerful web interface for FireCrawl web scraping capabilities with integrated
 ## ✨ Features
 
 ### Core Capabilities
-- 🤖 Integrated FireCrawl MCP server for advanced web scraping
+- 🤖 Official FireCrawl Node SDK integration for advanced web scraping
 - 🧠 OpenAI-powered business analysis and campaign recommendations
 - 🎯 Targeted audience and market research
 - 🎨 Design recommendations for direct mail campaigns
@@ -130,10 +130,10 @@ firecrawl-ui/
 │   └── public/              # Static assets
 ├── backend/
 │   ├── src/
-│   │   ├── mcp/             # MCP server implementation
 │   │   ├── middleware/      # Express middleware
 │   │   ├── routes/         # API routes
-│   │   ├── services/       # Business logic
+│   │   ├── services/       # Business logic and SDK integrations
+│   │   ├── utils/         # Utility functions
 │   │   └── types/         # TypeScript types
 │   └── tests/             # Backend tests
 └── docker/                # Docker configuration
@@ -163,6 +163,15 @@ Robust error handling system with:
 - Validation middleware
 - Rate limiting
 - Response sanitization
+- Automatic retries for transient failures
+
+#### FireCrawl SDK Integration
+The backend utilizes the official FireCrawl Node SDK for:
+- Web content extraction
+- Business information scraping
+- Image collection
+- Structured data parsing
+- Schema validation with Zod
 
 ## 🤝 Contributing
 
@@ -202,6 +211,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-Made with ❤️ by the FireCrawl Team
+Made with 🔨 by vpc-ai
 
 </div>
