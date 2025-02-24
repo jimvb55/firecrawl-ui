@@ -5,17 +5,22 @@ services:
     build:
       context: .
       dockerfile: docker/frontend/Dockerfile
+      target: build
     ports:
-      - "80:80"
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
-      - VITE_API_URL=${API_URL:-http://localhost:3000}
-      - NODE_ENV=production
+      - VITE_API_URL=http://localhost:3000
+      - NODE_ENV=development
+    command: npm run dev
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:80"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "wget", "--spider", "http://localhost:5173"]
+      interval: 10s
+      timeout: 5s
       retries: 3
-      start_period: 40s
+      start_period: 30s
     depends_on:
       backend:
         condition: service_healthy
@@ -27,19 +32,24 @@ services:
     build:
       context: .
       dockerfile: docker/backend/Dockerfile
+      target: build
     ports:
       - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - PORT=3000
       - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+    command: npm run dev
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
+      interval: 10s
+      timeout: 5s
       retries: 3
-      start_period: 40s
+      start_period: 30s
     networks:
       - firecrawl-network
     restart: unless-stopped
