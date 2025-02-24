@@ -11,10 +11,12 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    env_file:
+      - .env
     environment:
-      - VITE_API_URL=http://localhost:3000
+      - VITE_API_URL=http://backend:3000
       - NODE_ENV=development
-    command: npm run dev
+    command: npm run dev -- --host
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:5173"]
       interval: 10s

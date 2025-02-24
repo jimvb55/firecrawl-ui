@@ -21,7 +21,14 @@ export class FirecrawlError extends Error {
 }
 
 export class ValidationError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    public details?: {
+      path?: string;
+      waitTime?: number;
+      [key: string]: unknown;
+    }
+  ) {
     super(message);
     this.name = 'ValidationError';
   }

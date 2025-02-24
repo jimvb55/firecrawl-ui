@@ -20,7 +20,7 @@ export const validateRequest = (schema: AnyZodObject) => {
         message: err.message,
       }));
       
-      next(new ValidationError('Invalid request data', details));
+      next(new ValidationError('Invalid request data', { details }));
     }
   };
 };
@@ -47,7 +47,7 @@ export const rateLimiter = (
     if (recentRequests.length >= maxRequests) {
       const oldestRequest = recentRequests[0] || now;
       const waitTime = Math.ceil((windowMs - (now - oldestRequest)) / 1000);
-      next(new ValidationError(`Too many requests. Please try again in ${waitTime} seconds.`));
+      next(new ValidationError(`Too many requests. Please try again in ${waitTime} seconds.`, { waitTime }));
       return;
     }
 

@@ -1,4 +1,4 @@
-import type { BusinessInfo } from '../types/openai';
+import type { BusinessInfo } from '../types/openai.js';
 import FirecrawlApp from '@mendable/firecrawl-js';
 import { z } from 'zod';
 
@@ -79,8 +79,8 @@ type FirecrawlResponse<T> = {
   data: T;
   error?: string;
 };
-import { withRetry } from '../utils/retry';
-import { FirecrawlError, ValidationError } from '../types/errors';
+import { withRetry } from '../utils/retry.js';
+import { FirecrawlError, ValidationError } from '../types/errors.js';
 
 interface FirecrawlExtractSchema {
   business_info: {

@@ -262,10 +262,7 @@ Focus on extracting actionable insights that will help create targeted and effec
       }, 'message response');
     } catch (error) {
       if (error instanceof Error) {
-        throw new OpenAIError(
-          `Failed to analyze message: ${error.message}`,
-          { originalError: error }
-        );
+        throw new OpenAIError(`Failed to analyze message: ${error.message}`);
       }
       throw error;
     }
@@ -349,10 +346,7 @@ ${JSON.stringify(data, null, 2)}`,
       }, 'processed business info');
     } catch (error) {
       if (error instanceof Error) {
-        throw new OpenAIError(
-          `Failed to process business information: ${error.message}`,
-          { originalError: error }
-        );
+        throw new OpenAIError(`Failed to process business information: ${error.message}`);
       }
       throw error;
     }

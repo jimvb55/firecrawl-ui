@@ -13,8 +13,10 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://backend:3000',
         changeOrigin: true,
+        secure: false,
+        ws: true,
         // Remove the rewrite to keep the /api prefix
       },
     },
