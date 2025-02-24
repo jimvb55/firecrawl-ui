@@ -54,10 +54,12 @@ function App() {
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
 
   const handleNewMessage = (message: ChatMessage) => {
+    console.log('handleNewMessage called:', message);
     setChatHistory(prev => [...prev, message]);
     
     if (message.role === 'user') {
       setLastUserMessage(message.content);
+      console.log('Updated lastUserMessage:', message.content);
     } else {
       try {
         // Try to parse response data

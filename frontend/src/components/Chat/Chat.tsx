@@ -73,6 +73,7 @@ export function Chat({ onNewMessage, onBusinessData }: ChatProps) {
 
       while (retryCount < maxRetries) {
         try {
+          console.log('Sending chat request:', { message, history, page });
           const response = await fetch(`/api/firecrawl/chat?page=${page}`, {
             method: 'POST',
             headers: {
@@ -82,6 +83,7 @@ export function Chat({ onNewMessage, onBusinessData }: ChatProps) {
           });
           
           const data = await response.json();
+          console.log('Received response:', { status: response.status, data });
           
           if (!response.ok) {
             const errorResponse = data as ErrorResponse;
@@ -125,6 +127,7 @@ export function Chat({ onNewMessage, onBusinessData }: ChatProps) {
       throw lastError || new Error('Failed to send message after retries');
     },
     onSuccess: (data) => {
+      console.log('Mutation succeeded:', data);
       // Clear any previous errors
       setError(null);
 
@@ -141,6 +144,7 @@ export function Chat({ onNewMessage, onBusinessData }: ChatProps) {
       }
     },
     onError: (error: APIError) => {
+      console.error('Mutation failed:', error);
       let errorMessage = error.message;
       
       // Enhance error message based on error type
@@ -172,9 +176,11 @@ export function Chat({ onNewMessage, onBusinessData }: ChatProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted');
     if (!message.trim()) return;
 
     const newMessage: ChatMessage = { role: 'user', content: message };
+    console.log('New message:', newMessage);
     setHistory(prev => [...prev, newMessage]);
     onNewMessage(newMessage);
     setMessage('');
