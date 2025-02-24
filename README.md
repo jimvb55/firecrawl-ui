@@ -1,109 +1,157 @@
-# Firecrawl UI
+# FireCrawl UI
 
-A web interface for the Firecrawl service, built with React and Node.js.
+A modern web application for efficient file crawling and analysis with an intuitive chat interface.
 
-## Prerequisites
+## 🚀 Features
 
-- Node.js 18 or higher
+- Interactive chat interface for file analysis
+- Real-time file crawling capabilities
+- Docker support for both development and production
+- Scalable architecture with separate frontend and backend services
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React, TypeScript, Vite, TailwindCSS
+- **Backend**: Node.js, TypeScript, Express
+- **Infrastructure**: Docker, Docker Compose
+- **Development**: Hot-reload, VSCode debugging support
+
+## 📋 Prerequisites
+
+- Node.js (v18 or higher)
 - Docker and Docker Compose
 - Git
 
-## Environment Setup
+## 🏗️ Installation
 
 1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/firecrawl-ui.git
-cd firecrawl-ui
-```
+   ```bash
+   git clone https://github.com/jimvb55/firecrawl-ui.git
+   cd firecrawl-ui
+   ```
 
 2. Copy the example environment file:
-```bash
-cp .env.example .env
-```
+   ```bash
+   cp .env.example .env
+   ```
 
-3. Configure your environment variables in `.env`:
-```env
-# Required API Keys
-FIRECRAWL_API_KEY=your_firecrawl_api_key_here
-OPENAI_API_KEY=your_openai_api_key_here
+3. Install dependencies:
+   ```bash
+   npm install
+   cd frontend && npm install
+   cd ../backend && npm install
+   ```
 
-# API Configuration (defaults should work for local development)
-PORT=3000
-NODE_ENV=development
-API_URL=http://localhost:3000
+## 🚀 Development
 
-# Rate Limiting (adjust as needed)
-RATE_LIMIT_WINDOW=60000
-RATE_LIMIT_MAX_REQUESTS=100
+### Local Development
 
-# Cache Configuration (optional)
-CACHE_TTL=3600
-CACHE_MAX_SIZE=100
-```
-
-## Development
-
-Start the development environment using Docker Compose:
+Start the development servers:
 
 ```bash
-docker compose -f docker-compose.dev.yml up --build
+# Start both frontend and backend
+npm run dev
+
+# Or start services individually
+npm run dev:frontend
+npm run dev:backend
 ```
 
-This will start:
-- Frontend at http://localhost:5173
-- Backend API at http://localhost:3000
+The frontend will be available at `http://localhost:3000` and the backend at `http://localhost:3001`.
 
-## Project Structure
+### Docker Development
+
+Run the application using Docker Compose:
+
+```bash
+# Development environment with hot-reload
+docker-compose -f docker-compose.dev.yml up
+
+# Production environment
+docker-compose up
+```
+
+## 🔧 Configuration
+
+The application uses environment variables for configuration. Copy `.env.example` to `.env` and adjust the values:
+
+- `VITE_API_URL`: Backend API URL
+- Additional environment variables are documented in `.env.example`
+
+## 🏗️ Project Structure
 
 ```
 firecrawl-ui/
-├── backend/             # Node.js backend
-│   ├── src/
-│   │   ├── index.ts    # Entry point
-│   │   ├── routes/     # API routes
-│   │   ├── services/   # Business logic
-│   │   └── types/      # TypeScript types
-│   └── package.json
-├── frontend/           # React frontend
-│   ├── src/
-│   │   ├── components/ # React components
-│   │   ├── types/      # TypeScript types
-│   │   └── App.tsx    # Root component
-│   └── package.json
-├── docker/            # Docker configuration
-├── .env.example       # Example environment variables
-└── docker-compose.yml # Docker Compose configuration
+├── frontend/           # React frontend application
+│   ├── src/           # Source code
+│   ├── public/        # Static assets
+│   └── vite.config.ts # Vite configuration
+├── backend/           # Node.js backend service
+│   ├── src/          # Source code
+│   └── tsconfig.json # TypeScript configuration
+└── docker/           # Docker configuration files
 ```
 
-## Security Notes
+## 🔄 Development Workflow
 
-- Never commit `.env` files to version control
-- Keep API keys secure and rotate them regularly
-- Use environment variables for all sensitive configuration
-- The backend handles all API key management - no sensitive data is exposed to the frontend
+1. Create feature branch
+2. Make changes
+3. Run tests (when implemented)
+4. Submit pull request
 
-## Production Deployment
+## 🚀 Deployment
 
-For production deployment:
+### Production Deployment
 
-1. Set secure environment variables:
-   - Use a production-grade secrets management system
-   - Set `NODE_ENV=production`
-   - Configure appropriate rate limits
+1. Build the images:
+   ```bash
+   docker-compose build
+   ```
 
-2. Build and deploy using Docker:
-```bash
-docker compose up --build
-```
+2. Start the services:
+   ```bash
+   docker-compose up -d
+   ```
 
-## Contributing
+### Health Checks
 
-1. Create a feature branch
-2. Make your changes
-3. Submit a pull request
+The application includes health check endpoints for monitoring:
+- Frontend: `/health`
+- Backend: `/api/health`
 
-Please ensure you:
-- Don't commit any sensitive data or API keys
-- Follow the existing code style
-- Add tests for new features
-- Update documentation as needed
+## 🛠️ Future Improvements
+
+### Security
+- [ ] Implement API key rotation mechanism
+- [ ] Add rate limiting per API key
+- [ ] Add request logging and monitoring
+- [ ] Implement proper error handling for API key issues
+
+### Development
+- [ ] Add automated tests
+- [ ] Set up CI/CD pipeline
+- [ ] Add code linting and formatting
+- [ ] Implement proper error boundaries in React components
+
+### Docker
+- [ ] Optimize Docker builds
+- [ ] Add container security scanning
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## 📝 Notes
+
+### Windows Development
+- Ensure line endings are consistently LF (configured in .gitattributes)
+- Docker volume mounts may need adjustment
+- Use cross-platform scripts in package.json
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
