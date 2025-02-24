@@ -116,6 +116,79 @@ The application will be available at:
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:3000
 
+### 🐳 Docker Setup
+
+The application can be run using Docker in both development and production environments.
+
+#### Prerequisites
+- Docker
+- Docker Compose
+
+#### Development Environment
+
+1. Create a `.env` file in the root directory with your environment variables:
+```env
+FIRECRAWL_API_KEY=your_firecrawl_api_key
+OPENAI_API_KEY=your_openai_api_key
+API_URL=http://localhost:3000
+```
+
+2. Start the development environment with hot-reload:
+```bash
+docker-compose -f docker-compose.dev.yml up
+```
+
+The development environment will be available at:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3000
+
+#### Production Environment
+
+1. Configure environment variables:
+```env
+FIRECRAWL_API_KEY=your_firecrawl_api_key
+OPENAI_API_KEY=your_openai_api_key
+API_URL=http://your-production-api-url
+```
+
+2. Build and start the production containers:
+```bash
+docker-compose up --build
+```
+
+The production environment will be available at:
+- Frontend: http://localhost:80
+- Backend API: http://localhost:3000
+
+#### Health Checks
+
+The application includes health check endpoints:
+- Frontend: http://localhost:80/health (production) or http://localhost:5173 (development)
+- Backend: http://localhost:3000/health
+
+#### Docker Commands
+
+Common Docker commands for managing the application:
+
+```bash
+# Start services in detached mode
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Rebuild and start services
+docker-compose up --build
+
+# Remove all containers and volumes
+docker-compose down -v
+```
+
+For more detailed Docker instructions and troubleshooting, see [DEVELOPMENT.md](DEVELOPMENT.md).
+
 ## 📖 Documentation
 
 ### Project Structure
