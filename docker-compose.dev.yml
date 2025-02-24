@@ -38,11 +38,11 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
       - PORT=3000
-      - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
     command: npm run dev
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:3000/health"]

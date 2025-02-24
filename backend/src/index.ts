@@ -10,8 +10,16 @@ import type { AddressInfo } from 'net';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load environment variables with explicit path
-dotenv.config({ path: resolve(__dirname, '../../.env') });
+// Load environment variables
+dotenv.config();
+
+// Validate required environment variables
+const requiredEnvVars = ['FIRECRAWL_API_KEY', 'OPENAI_API_KEY'];
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    throw new Error(`Missing required environment variable: ${envVar}`);
+  }
+}
 
 const app = express();
 const port = process.env.PORT || 3000;

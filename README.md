@@ -63,24 +63,23 @@ npm install
 
 3. Configure environment variables:
 
-Create a `.env` file in the backend directory:
-```env
-# Server Configuration
-PORT=3000
-NODE_ENV=development
+Copy the example environment file and configure your variables:
+```bash
+cp .env.example .env
+```
 
-# API Keys
+Edit the `.env` file and add your API keys:
+```env
+# Required API Keys
 FIRECRAWL_API_KEY=your_firecrawl_api_key
 OPENAI_API_KEY=your_openai_api_key
-
-# Rate Limiting
-RATE_LIMIT_WINDOW=60000
-RATE_LIMIT_MAX_REQUESTS=100
-
-# Cache Configuration (optional)
-CACHE_TTL=3600
-CACHE_MAX_SIZE=100
 ```
+
+⚠️ **Important Security Notes:**
+- Never commit the `.env` file to version control
+- Keep your API keys secure and never expose them in the frontend
+- The `.env` file should be placed in the root directory of the project
+- Different environment variables may be needed for development and production
 
 ### API Key Setup
 
@@ -126,11 +125,13 @@ The application can be run using Docker in both development and production envir
 
 #### Development Environment
 
-1. Create a `.env` file in the root directory with your environment variables:
-```env
-FIRECRAWL_API_KEY=your_firecrawl_api_key
-OPENAI_API_KEY=your_openai_api_key
-API_URL=http://localhost:3000
+1. Ensure your environment variables are set up:
+```bash
+# Copy the example environment file if you haven't already
+cp .env.example .env
+
+# Edit the .env file with your configuration
+nano .env
 ```
 
 2. Start the development environment with hot-reload:
